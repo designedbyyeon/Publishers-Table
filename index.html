@@ -27,7 +27,7 @@
   .today{
     margin-left:auto;
     display:flex; align-items:center; gap:6px;
-    padding:4px 8px; margin-right:-4px;
+    padding:4px 4px 4px 8px;
     border-radius:8px;
     font-size:clamp(10px,1.45vh,12px);
     color:var(--ink-2);
@@ -35,6 +35,15 @@
   }
   .today b{ color:var(--ink); font-weight:600; }
   .today .arrow{ opacity:.5; }
+  .sync-badge{
+    display:none; align-items:center; gap:4px;
+    padding:2px 7px; border-radius:999px;
+    background:var(--surface); border:1px solid var(--line);
+    font-size:clamp(9px,1.3vh,11px);
+  }
+  .sync-badge.on{ display:inline-flex; }
+  .sync-badge .led{ width:6px; height:6px; border-radius:50%; background:#2E9E5B; }
+  .sync-badge.wait .led{ background:#C98A1B; }
   .today:active{ background:var(--surface); }
 
   /* ── 버튼판 ─────────────────────────── */
@@ -265,6 +274,7 @@
     <span class="brand">글자취미<span class="x">×</span>한주한자</span>
     <a class="today" href="records.html" id="today">
       <span>오늘 <b id="todayAmt">0</b>원 · <b id="todayCnt">0</b>건</span>
+      <span class="sync-badge" id="syncBadge"></span>
       <span class="arrow">›</span>
     </a>
   </header>
@@ -288,6 +298,7 @@
 
 <script src="assets/catalog.js"></script>
 <script src="assets/store.js"></script>
+<script src="assets/sync.js"></script>
 <script>
 (function(){
   let cart = {};
@@ -407,6 +418,19 @@
     document.getElementById('todayCnt').textContent = s.sales;
   }
 
+  const badge = document.getElementById('syncBadge');
+  function paintSync(st){
+    badge.className = 'sync-badge';
+    if (!st.enabled) return;
+    badge.classList.add('on');
+    if (st.pending){
+      badge.classList.add('wait');
+      badge.innerHTML = '<i class="led"></i>대기 ' + st.pending;
+    } else {
+      badge.innerHTML = '<i class="led"></i>시트';
+    }
+  }
+
   let toastTimer = null;
   function toast(msg){
     toastEl.textContent = msg;
@@ -436,6 +460,7 @@
     cart = {}; history = [];
     disarm(); buzz(24); render(); refreshToday();
     toast('저장 완료 · ' + won(amount) + '원');
+    Sync.flush();
   });
 
   let armed = false, armTimer = null;
@@ -459,6 +484,8 @@
 
   render();
   refreshToday();
+  Sync.onChange(paintSync);
+  Sync.start();
   /* 기록 페이지에서 수정하고 돌아왔을 때 오늘 합계를 다시 읽습니다. */
   window.addEventListener('pageshow', refreshToday);
 })();

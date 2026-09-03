@@ -243,6 +243,90 @@
     font-size:12px; line-height:1.7; color:var(--ink-2);
   }
 
+
+  /* ── 구글 시트 연동 ─────────────────── */
+  .sync{
+    margin:30px 0 0;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--surface);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .sync-head{
+    display:flex; align-items:center; gap:10px;
+    width:100%; padding:14px 15px;
+    border:0; background:transparent; color:var(--ink);
+    font:inherit; text-align:left; cursor:pointer;
+  }
+  .sync-head:active{ background:var(--surface-2); }
+  .sync-title{ font-size:14px; font-weight:600; }
+  .sync-state{
+    margin-left:auto;
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; color:var(--ink-2);
+  }
+  .sync-state .led{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--line-2);
+  }
+  .sync-state.ok .led{ background:#2E9E5B; }
+  .sync-state.wait .led{ background:#C98A1B; }
+  .sync-state.err .led{ background:var(--t2); }
+  .sync-head .chev{ opacity:.4; font-size:13px; }
+
+  .sync-body{ display:none; padding:2px 15px 16px; border-top:1px solid var(--line); }
+  .sync.open .sync-body{ display:block; }
+
+  .field{ margin-top:13px; }
+  .field label{
+    display:block; margin-bottom:5px;
+    font-size:12px; font-weight:600; color:var(--ink-2);
+  }
+  .field input{
+    width:100%; padding:10px 11px;
+    border:1px solid var(--line-2); border-radius:9px;
+    background:var(--surface); color:var(--ink);
+    font:inherit; font-size:13px;
+  }
+  .field .hint{ margin-top:5px; font-size:11.5px; line-height:1.6; color:var(--ink-2); }
+
+  .sync-btns{ display:flex; flex-wrap:wrap; gap:8px; margin-top:15px; }
+  .sync-btns button{
+    padding:10px 14px;
+    border:1px solid var(--line-2); border-radius:9px;
+    background:var(--surface); color:var(--ink);
+    font:inherit; font-size:13px; font-weight:600;
+    cursor:pointer;
+  }
+  .sync-btns button.primary{
+    border-color:var(--ink); background:var(--ink); color:var(--paper);
+  }
+  .sync-btns button:disabled{ opacity:.35; cursor:default; }
+  .sync-msg{
+    margin-top:11px; font-size:12.5px; line-height:1.6;
+    color:var(--ink-2); word-break:break-all;
+  }
+  .sync-msg.ok{ color:#2E9E5B; }
+  .sync-msg.err{ color:var(--t2); }
+
+  .how{ margin-top:18px; border-top:1px solid var(--line); padding-top:14px; }
+  .how summary{
+    font-size:12.5px; font-weight:600; color:var(--ink-2);
+    cursor:pointer; list-style:none;
+  }
+  .how summary::-webkit-details-marker{ display:none; }
+  .how summary::before{ content:"⌄ "; opacity:.5; }
+  .how[open] summary::before{ content:"⌃ "; }
+  .how ol{ margin:12px 0 0; padding-left:20px; font-size:12.5px; line-height:1.85; color:var(--ink-2); }
+  .how li + li{ margin-top:4px; }
+  .how b{ color:var(--ink); }
+  .how .warn{
+    margin-top:12px; padding:10px 12px;
+    border-radius:9px; background:var(--t2-soft); color:var(--t2);
+    font-size:11.5px; line-height:1.6;
+  }
+
   .toast{
     position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 26px);
     transform:translate(-50%, 8px);
@@ -275,11 +359,59 @@
 
 <div class="wrap" id="body"></div>
 
+
+<div class="wrap">
+  <section class="sync" id="sync">
+    <button class="sync-head" type="button" id="syncToggle">
+      <span class="sync-title">구글 시트 연동</span>
+      <span class="sync-state" id="syncState"><i class="led"></i><span id="syncStateText">꺼짐</span></span>
+      <span class="chev">⌄</span>
+    </button>
+    <div class="sync-body">
+      <div class="field">
+        <label for="syncUrl">웹 앱 주소</label>
+        <input id="syncUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
+        <div class="hint">아래 <b>연동하는 법</b>을 따라 만든 주소를 붙여넣으세요.</div>
+      </div>
+      <div class="field">
+        <label for="syncDevice">이 기기 이름</label>
+        <input id="syncDevice" type="text" autocomplete="off" placeholder="예: 계산 담당 폰">
+        <div class="hint">시트에 어느 폰에서 기록했는지 함께 남습니다.</div>
+      </div>
+      <div class="field">
+        <label for="syncSecret">비밀 키 (선택)</label>
+        <input id="syncSecret" type="text" autocomplete="off" placeholder="스크립트의 SECRET 과 같은 값">
+      </div>
+      <div class="sync-btns">
+        <button type="button" class="primary" id="syncSave">저장하고 연결</button>
+        <button type="button" id="syncNow">지금 전송</button>
+        <button type="button" id="syncOff">연동 끄기</button>
+      </div>
+      <div class="sync-msg" id="syncMsg"></div>
+
+      <details class="how">
+        <summary>연동하는 법 (5분)</summary>
+        <ol>
+          <li>구글 스프레드시트를 새로 만듭니다. 주소창에 <b>sheets.new</b> 를 치면 바로 생깁니다.</li>
+          <li>메뉴에서 <b>확장 프로그램 → Apps Script</b> 를 엽니다.</li>
+          <li>편집기에 있던 내용을 모두 지우고, <button type="button" id="copyScript" style="padding:4px 9px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);font:inherit;font-size:11.5px;font-weight:600;cursor:pointer">스크립트 복사</button> 를 눌러 붙여넣고 저장합니다.</li>
+          <li>오른쪽 위 <b>배포 → 새 배포</b>, 톱니바퀴에서 유형을 <b>웹 앱</b>으로 고릅니다.</li>
+          <li><b>실행 사용자: 나</b>, <b>액세스 권한: 모든 사용자</b> 로 두고 배포합니다.</li>
+          <li>권한 승인 창이 뜨면 본인 계정을 고르고 <b>고급 → 이동</b> 을 눌러 허용합니다.</li>
+          <li>나온 <b>/exec 로 끝나는 주소</b>를 위 칸에 붙여넣고 <b>저장하고 연결</b>을 누릅니다.</li>
+        </ol>
+        <div class="warn">‘모든 사용자’는 주소를 아는 사람이면 시트에 기록을 보낼 수 있다는 뜻입니다. 주소를 팀원끼리만 공유하시고, 더 막고 싶으면 스크립트의 <b>SECRET</b> 에 값을 넣고 위 <b>비밀 키</b>에 같은 값을 적으세요.</div>
+      </details>
+    </div>
+  </section>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="assets/catalog.js"></script>
 <script src="assets/store.js"></script>
 <script src="assets/xlsx.js"></script>
+<script src="assets/sync.js"></script>
 <script>
 (function(){
   const tabsEl = document.getElementById('tabs');
@@ -448,7 +580,7 @@
         Store.update(id, { date: dateIn.value });
         selected = dateIn.value;
         toast('날짜를 옮겼습니다');
-        render();
+        touched();
       });
 
       const del = box.querySelector('[data-act="del"]');
@@ -465,7 +597,7 @@
         Store.remove(id);
         openId = null;
         toast('거래를 삭제했습니다');
-        render();
+        touched();
       });
     });
   }
@@ -488,7 +620,7 @@
     } else {
       Store.update(recId, { lines: kept });
     }
-    render();
+    touched();
   }
 
   /* ── 엑셀 ───────────────────────────── */
@@ -552,7 +684,103 @@
     toast('엑셀 파일을 내려받았습니다');
   });
 
+  function touched(){
+    render();
+    Sync.flush();
+  }
+
+  /* ── 구글 시트 연동 UI ──────────────── */
+  function initSync(){
+    const box     = document.getElementById('sync');
+    const stateEl = document.getElementById('syncState');
+    const textEl  = document.getElementById('syncStateText');
+    const urlIn   = document.getElementById('syncUrl');
+    const devIn   = document.getElementById('syncDevice');
+    const secIn   = document.getElementById('syncSecret');
+    const msgEl   = document.getElementById('syncMsg');
+
+    const c = Sync.config();
+    urlIn.value = c.url;
+    devIn.value = c.device;
+    secIn.value = c.secret;
+
+    document.getElementById('syncToggle').addEventListener('click', () => {
+      box.classList.toggle('open');
+    });
+    if (!c.url) box.classList.add('open');
+
+    function msg(text, kind){
+      msgEl.textContent = text || '';
+      msgEl.className = 'sync-msg' + (kind ? ' ' + kind : '');
+    }
+
+    Sync.onChange(st => {
+      stateEl.className = 'sync-state';
+      if (!st.enabled){ textEl.textContent = '꺼짐'; return; }
+      if (st.busy){ textEl.textContent = '전송 중'; stateEl.classList.add('wait'); return; }
+      if (st.pending){
+        textEl.textContent = '대기 ' + st.pending + '건';
+        stateEl.classList.add(st.lastError ? 'err' : 'wait');
+        return;
+      }
+      textEl.textContent = '연결됨';
+      stateEl.classList.add('ok');
+    });
+
+    document.getElementById('syncSave').addEventListener('click', () => {
+      const url = urlIn.value.trim();
+      if (!url){ msg('웹 앱 주소를 붙여넣어 주세요.', 'err'); return; }
+      if (url.indexOf('/exec') < 0){
+        msg('주소가 /exec 으로 끝나야 합니다. 배포 화면에서 나온 웹 앱 URL을 그대로 붙여넣으세요.', 'err');
+        return;
+      }
+      msg('연결을 확인하는 중…');
+      Sync.test(url).then(info => {
+        Sync.setConfig({ url, device: devIn.value.trim(), secret: secIn.value.trim(), enabled:true });
+        msg('연결됐습니다. 시트에 지금 ' + (info.rows || 0) + '줄이 있습니다. 밀린 기록을 보냅니다…', 'ok');
+        return Sync.flush();
+      }).then(r => {
+        if (r && r.error) msg('연결은 됐지만 전송에 실패했습니다: ' + r.error, 'err');
+        else if (r && r.sent) msg(r.sent + '건을 시트로 보냈습니다.', 'ok');
+      }).catch(err => {
+        msg('연결하지 못했습니다: ' + err.message + ' — 배포할 때 액세스 권한을 ‘모든 사용자’로 두었는지 확인해 주세요.', 'err');
+      });
+    });
+
+    document.getElementById('syncNow').addEventListener('click', () => {
+      if (!Sync.config().enabled){ msg('먼저 저장하고 연결해 주세요.', 'err'); return; }
+      msg('전송 중…');
+      Sync.flush().then(r => {
+        if (r.error) msg('전송 실패: ' + r.error, 'err');
+        else if (r.sent) msg(r.sent + '건을 보냈습니다.', 'ok');
+        else msg('보낼 기록이 없습니다. 모두 반영돼 있습니다.', 'ok');
+      });
+    });
+
+    document.getElementById('syncOff').addEventListener('click', () => {
+      Sync.setConfig({ enabled:false });
+      msg('연동을 껐습니다. 기록은 폰에 계속 쌓입니다.');
+      Sync.onChange(() => {});
+      location.reload();
+    });
+
+    const copyBtn = document.getElementById('copyScript');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+      fetch('google-apps-script.gs')
+        .then(r => r.text())
+        .then(t => navigator.clipboard.writeText(t))
+        .then(() => toast('스크립트를 복사했습니다'))
+        .catch(() => {
+          window.open('google-apps-script.gs', '_blank');
+          toast('새 탭에서 스크립트를 열었습니다');
+        });
+    });
+
+    Sync.start();
+  }
+
   render();
+  initSync();
 })();
 </script>
 </body>

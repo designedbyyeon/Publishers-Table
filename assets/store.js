@@ -5,11 +5,12 @@ window.Store = (function(){
   function read(){
     try {
       const raw = localStorage.getItem(KEY);
-      if (!raw) return { v:1, records:[] };
+      if (!raw) return { v:1, records:[], tombstones:[] };
       const s = JSON.parse(raw);
-      if (!s || !Array.isArray(s.records)) return { v:1, records:[] };
+      if (!s || !Array.isArray(s.records)) return { v:1, records:[], tombstones:[] };
+      if (!Array.isArray(s.tombstones)) s.tombstones = [];
       return s;
-    } catch(e){ return { v:1, records:[] }; }
+    } catch(e){ return { v:1, records:[], tombstones:[] }; }
   }
 
   function write(state){
@@ -49,6 +50,8 @@ window.Store = (function(){
       date: dateKey(now),
       time: timeKey(now),
       ts: now.getTime(),
+      dirty: true,
+      synced: false,
       lines: lines.map(l => ({
         id: l.id,
         qty: l.qty,
@@ -68,7 +71,7 @@ window.Store = (function(){
     const s = read();
     const i = s.records.findIndex(r => r.id === id);
     if (i < 0) return false;
-    s.records[i] = Object.assign({}, s.records[i], patch);
+    s.records[i] = Object.assign({}, s.records[i], patch, { dirty:true });
     s.records[i].lines = s.records[i].lines.filter(l => l.qty > 0);
     write(s);
     return true;
@@ -76,13 +79,47 @@ window.Store = (function(){
 
   function remove(id){
     const s = read();
+    const rec = s.records.find(r => r.id === id);
+    /* 시트에 이미 올라간 건만 삭제 요청을 남깁니다. */
+    if (rec && rec.synced && s.tombstones.indexOf(id) < 0) s.tombstones.push(id);
     s.records = s.records.filter(r => r.id !== id);
     write(s);
     return true;
   }
 
   function clearAll(){
-    write({ v:1, records:[] });
+    write({ v:1, records:[], tombstones:[] });
+  }
+
+  /* ── 구글 시트로 보낼 것 ─────────────── */
+  function pendingOps(){
+    const s = read();
+    const ops = s.records.filter(r => r.dirty).map(r => ({
+      op: 'upsert',
+      id: r.id,
+      date: r.date,
+      time: r.time,
+      lines: r.lines.map(l => ({
+        id: l.id,
+        nm: (window.CATALOG[l.id] || {}).nm || l.id,
+        team: window.TEAM_NAME[(window.CATALOG[l.id] || {}).team] || '',
+        pr: l.pr,
+        qty: l.qty
+      }))
+    }));
+    s.tombstones.forEach(id => ops.push({ op:'delete', id: id }));
+    return ops;
+  }
+
+  function markSynced(ops){
+    const s = read();
+    const upserted = {}, deleted = {};
+    ops.forEach(o => { (o.op === 'delete' ? deleted : upserted)[o.id] = true; });
+    s.records.forEach(r => {
+      if (upserted[r.id]){ r.dirty = false; r.synced = true; }
+    });
+    s.tombstones = s.tombstones.filter(id => !deleted[id]);
+    write(s);
   }
 
   function recTotal(rec){
@@ -140,6 +177,7 @@ window.Store = (function(){
   return {
     add, all, update, remove, clearAll,
     byDate, summarize, todaySummary,
+    pendingOps, markSynced,
     recTotal, recCount,
     dateKey, timeKey, weekday, shortDate
   };

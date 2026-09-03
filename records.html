@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>부스 판매 기록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Song+Myung&display=swap">
+<link rel="stylesheet" href="assets/base.css">
+<style>
+  body{ padding-bottom:calc(env(safe-area-inset-bottom) + 32px); }
+  .wrap{ max-width:840px; margin:0 auto; padding:0 clamp(12px,3.5vw,20px); }
+
+  /* ── 헤더 ───────────────────────────── */
+  .top{
+    position:sticky; top:0; z-index:5;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  .top-inner{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 0;
+  }
+  .back{
+    display:inline-flex; align-items:center; gap:4px;
+    padding:7px 11px 7px 8px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    background:var(--surface);
+    color:var(--ink); text-decoration:none;
+    font-size:13px; font-weight:500;
+  }
+  .back:active{ background:var(--surface-2); }
+  .top h1{
+    margin:0;
+    font-family:"Song Myung", serif;
+    font-size:17px; font-weight:400;
+  }
+  .xlsx{
+    margin-left:auto;
+    padding:9px 14px;
+    border:0; border-radius:9px;
+    background:var(--ink); color:var(--paper);
+    font:inherit; font-size:13px; font-weight:600;
+    cursor:pointer;
+  }
+  .xlsx:active{ opacity:.85; }
+  .xlsx:disabled{ opacity:.3; cursor:default; }
+
+  /* ── 날짜 탭 ────────────────────────── */
+  .tabs{
+    display:flex; gap:6px;
+    padding:0 0 10px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex:0 0 auto;
+    padding:8px 14px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:var(--surface);
+    color:var(--ink-2);
+    font:inherit; font-size:13px; font-weight:500;
+    white-space:nowrap;
+    cursor:pointer;
+  }
+  .tab[aria-selected="true"]{
+    background:var(--ink); border-color:var(--ink); color:var(--paper);
+    font-weight:600;
+  }
+
+  /* ── 요약 ───────────────────────────── */
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(148px,1fr));
+    gap:10px;
+    margin:14px 0 20px;
+  }
+  .card{
+    padding:14px 15px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--surface);
+    box-shadow:var(--shadow);
+  }
+  .card .k{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; letter-spacing:.04em; color:var(--ink-2);
+  }
+  .card .v{
+    margin-top:6px;
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:24px; font-weight:600; line-height:1.1;
+  }
+  .card .v small{ font-family:"Song Myung", serif; font-size:13px; opacity:.6; margin-left:2px; }
+  .card.big{ grid-column:1 / -1; }
+  .card.big .v{ font-size:32px; }
+  .dot{ display:inline-block; width:8px; height:8px; border-radius:2px; }
+  .dot.t1{ background:var(--t1); } .dot.t2{ background:var(--t2); }
+
+  h2{
+    margin:26px 0 10px;
+    font-size:13px; font-weight:600; letter-spacing:.06em;
+    color:var(--ink-2);
+  }
+
+  /* ── 상품별 표 ──────────────────────── */
+  .table-wrap{
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--surface);
+    overflow-x:auto;
+    box-shadow:var(--shadow);
+  }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  th, td{ padding:11px 12px; text-align:left; white-space:nowrap; }
+  th{
+    font-size:11.5px; font-weight:600; letter-spacing:.04em;
+    color:var(--ink-2);
+    border-bottom:1px solid var(--line);
+  }
+  tbody tr + tr td{ border-top:1px solid var(--line); }
+  td.num, th.num{
+    text-align:right;
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+  }
+  tfoot td{ border-top:2px solid var(--line-2); font-weight:700; }
+  .nm-cell{ white-space:normal; min-width:120px; }
+  .team-chip{
+    display:inline-block; width:8px; height:8px; border-radius:2px;
+    margin-right:7px; vertical-align:0;
+  }
+
+  /* ── 거래 목록 ──────────────────────── */
+  .rec{
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--surface);
+    box-shadow:var(--shadow);
+    margin-bottom:9px;
+    overflow:hidden;
+  }
+  .rec-head{
+    display:flex; align-items:center; gap:12px;
+    width:100%; padding:13px 15px;
+    border:0; background:transparent; color:var(--ink);
+    font:inherit; text-align:left; cursor:pointer;
+  }
+  .rec-head:active{ background:var(--surface-2); }
+  .rec-when{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px; color:var(--ink-2); flex:0 0 auto;
+  }
+  .rec-items{
+    flex:1 1 auto; min-width:0;
+    font-size:13px; line-height:1.35;
+  }
+  .rec-amt{
+    flex:0 0 auto;
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:15px; font-weight:600;
+  }
+  .rec-amt .chev{ margin-left:8px; font-weight:400; opacity:.4; }
+
+  .edit{ display:none; padding:4px 15px 15px; border-top:1px solid var(--line); }
+  .rec.open .edit{ display:block; }
+  .rec.open .rec-amt .chev{ opacity:.8; }
+
+  .line{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 0;
+  }
+  .line + .line{ border-top:1px solid var(--line); }
+  .line .ln{ flex:1 1 auto; min-width:0; font-size:14px; }
+  .line .lp{
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:12px; color:var(--ink-2);
+  }
+  .stepper{ display:flex; align-items:center; gap:2px; flex:0 0 auto; }
+  .stepper button{
+    width:38px; height:38px;
+    border:1px solid var(--line-2);
+    background:var(--surface);
+    color:var(--ink);
+    font:inherit; font-size:17px; line-height:1;
+    cursor:pointer;
+  }
+  .stepper button:first-child{ border-radius:9px 0 0 9px; }
+  .stepper button:last-child{ border-radius:0 9px 9px 0; }
+  .stepper button:active{ background:var(--surface-2); }
+  .stepper .q{
+    min-width:42px; height:38px;
+    display:flex; align-items:center; justify-content:center;
+    border-top:1px solid var(--line-2); border-bottom:1px solid var(--line-2);
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:15px; font-weight:600;
+  }
+
+  .edit-foot{
+    display:flex; flex-wrap:wrap; align-items:center; gap:9px;
+    margin-top:14px; padding-top:13px;
+    border-top:1px solid var(--line);
+  }
+  .edit-foot label{ font-size:12px; color:var(--ink-2); }
+  select, input[type="date"]{
+    padding:9px 10px;
+    border:1px solid var(--line-2);
+    border-radius:9px;
+    background:var(--surface);
+    color:var(--ink);
+    font:inherit; font-size:13px;
+  }
+  .del{
+    margin-left:auto;
+    padding:9px 14px;
+    border:1px solid var(--t2-line);
+    border-radius:9px;
+    background:var(--t2-soft); color:var(--t2);
+    font:inherit; font-size:13px; font-weight:600;
+    cursor:pointer;
+  }
+  .del.armed{ background:var(--t2); border-color:var(--t2); color:#fff; }
+
+  .empty{
+    margin:40px 0;
+    padding:34px 20px;
+    border:1px dashed var(--line-2);
+    border-radius:var(--r);
+    text-align:center;
+    color:var(--ink-2);
+    font-size:14px; line-height:1.6;
+  }
+  .note{
+    margin:22px 0 0;
+    font-size:12px; line-height:1.7; color:var(--ink-2);
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 26px);
+    transform:translate(-50%, 8px);
+    padding:12px 20px; border-radius:999px;
+    background:var(--ink); color:var(--paper);
+    font-size:14px; font-weight:600;
+    box-shadow:0 6px 24px rgba(0,0,0,.28);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+    z-index:20;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .toast{ background:#EDEFF3; color:#15171C; }
+  }
+  :root[data-theme="dark"] .toast{ background:#EDEFF3; color:#15171C; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="wrap top-inner">
+    <a class="back" href="index.html">‹ 계산기</a>
+    <h1>판매 기록</h1>
+    <button class="xlsx" id="xlsx" type="button">엑셀 내려받기</button>
+  </div>
+  <div class="wrap"><div class="tabs" id="tabs" role="tablist"></div></div>
+</div>
+
+<div class="wrap" id="body"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/catalog.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/xlsx.js"></script>
+<script>
+(function(){
+  const tabsEl = document.getElementById('tabs');
+  const bodyEl = document.getElementById('body');
+  const toastEl = document.getElementById('toast');
+  let selected = null;      // null = 전체
+  let openId = null;        // 펼쳐진 거래
+
+  let toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1900);
+  }
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  function itemSummary(rec){
+    return rec.lines.map(l => {
+      const c = CATALOG[l.id];
+      return esc(c ? c.nm : l.id) + (l.qty > 1 ? ' <b>×' + l.qty + '</b>' : '');
+    }).join(', ');
+  }
+
+  /* ── 렌더 ───────────────────────────── */
+  function render(){
+    const days = Store.byDate();
+
+    /* 탭 */
+    const dates = days.map(d => d.date);
+    if (selected && dates.indexOf(selected) < 0) selected = null;
+    if (selected === null && dates.length) selected = dates.indexOf(Store.dateKey(new Date())) >= 0
+      ? Store.dateKey(new Date())
+      : dates[0];
+
+    tabsEl.innerHTML = '';
+    if (days.length){
+      const mk = (label, value) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'tab';
+        b.textContent = label;
+        b.setAttribute('role','tab');
+        b.setAttribute('aria-selected', String(selected === value));
+        b.addEventListener('click', () => { selected = value; openId = null; render(); });
+        tabsEl.appendChild(b);
+      };
+      days.slice().reverse().forEach(d => mk(d.label + ' (' + d.records.length + ')', d.date));
+      mk('전체', '__all__');
+      const sel = tabsEl.querySelector('[aria-selected="true"]');
+      if (sel) sel.scrollIntoView({ block:'nearest', inline:'center' });
+    }
+
+    const records = selected === '__all__' || selected === null
+      ? Store.all()
+      : (days.find(d => d.date === selected) || { records:[] }).records;
+
+    const s = Store.summarize(records);
+
+    if (!Store.all().length){
+      bodyEl.innerHTML =
+        '<div class="empty">아직 저장된 판매 기록이 없습니다.<br>' +
+        '계산기에서 <b>판매 완료</b>를 누르면 여기에 쌓입니다.</div>';
+      document.getElementById('xlsx').disabled = true;
+      return;
+    }
+    document.getElementById('xlsx').disabled = false;
+
+    let html = '';
+
+    /* 요약 카드 */
+    html += '<div class="cards">' +
+      '<div class="card big"><div class="k">매출</div><div class="v">' + won(s.total) + '<small>원</small></div></div>' +
+      '<div class="card"><div class="k">판매 건수</div><div class="v">' + s.sales + '<small>건</small></div></div>' +
+      '<div class="card"><div class="k">판매 수량</div><div class="v">' + s.count + '<small>개</small></div></div>' +
+      '<div class="card"><div class="k"><i class="dot t1"></i>글자취미</div><div class="v">' + won(s.perTeam.t1) + '<small>원</small></div></div>' +
+      '<div class="card"><div class="k"><i class="dot t2"></i>한주한자</div><div class="v">' + won(s.perTeam.t2) + '<small>원</small></div></div>' +
+      '</div>';
+
+    /* 상품별 집계 */
+    html += '<h2>상품별</h2><div class="table-wrap"><table><thead><tr>' +
+      '<th>상품</th><th class="num">단가</th><th class="num">수량</th><th class="num">금액</th>' +
+      '</tr></thead><tbody>';
+    s.items.forEach(it => {
+      html += '<tr>' +
+        '<td class="nm-cell"><i class="team-chip" style="background:var(--' + it.team + ')"></i>' + esc(it.nm) + '</td>' +
+        '<td class="num">' + won(it.pr) + '</td>' +
+        '<td class="num">' + it.qty + '</td>' +
+        '<td class="num">' + won(it.amt) + '</td></tr>';
+    });
+    html += '</tbody><tfoot><tr><td>합계</td><td class="num"></td><td class="num">' + s.count +
+      '</td><td class="num">' + won(s.total) + '</td></tr></tfoot></table></div>';
+
+    /* 거래 목록 */
+    html += '<h2>거래 내역 · 눌러서 수정</h2>';
+    records.forEach(r => {
+      const open = r.id === openId;
+      html += '<div class="rec' + (open ? ' open' : '') + '" data-id="' + r.id + '">' +
+        '<button class="rec-head" type="button" data-act="toggle">' +
+          '<span class="rec-when">' + Store.shortDate(r.date) + '<br>' + r.time + '</span>' +
+          '<span class="rec-items">' + itemSummary(r) + '</span>' +
+          '<span class="rec-amt">' + won(Store.recTotal(r)) + '<span class="chev">' + (open ? '⌃' : '⌄') + '</span></span>' +
+        '</button>' +
+        (open ? editHtml(r) : '') +
+      '</div>';
+    });
+
+    html += '<p class="note">기록은 이 브라우저에만 저장됩니다. 앱 데이터를 지우면 함께 사라지니, ' +
+      '하루가 끝나면 <b>엑셀 내려받기</b>로 백업해 두세요.</p>';
+
+    bodyEl.innerHTML = html;
+    bind();
+  }
+
+  function editHtml(r){
+    let h = '<div class="edit">';
+    r.lines.forEach(l => {
+      const c = CATALOG[l.id] || { nm:l.id };
+      h += '<div class="line">' +
+        '<span class="ln">' + esc(c.nm) + '<br><span class="lp">' + won(l.pr) + '원 × ' + l.qty + ' = ' + won(l.pr * l.qty) + '원</span></span>' +
+        '<span class="stepper">' +
+          '<button type="button" data-act="dec" data-item="' + l.id + '" aria-label="수량 빼기">−</button>' +
+          '<span class="q">' + l.qty + '</span>' +
+          '<button type="button" data-act="inc" data-item="' + l.id + '" aria-label="수량 더하기">+</button>' +
+        '</span></div>';
+    });
+
+    const missing = Object.keys(CATALOG).filter(id => !r.lines.some(l => l.id === id));
+    h += '<div class="edit-foot">';
+    if (missing.length){
+      h += '<select data-act="addItem"><option value="">상품 추가…</option>' +
+        missing.map(id => '<option value="' + id + '">' + esc(CATALOG[id].nm) + '</option>').join('') +
+        '</select>';
+    }
+    h += '<label>날짜 <input type="date" data-act="date" value="' + r.date + '"></label>';
+    h += '<button class="del" type="button" data-act="del">삭제</button>';
+    h += '</div></div>';
+    return h;
+  }
+
+  /* ── 조작 ───────────────────────────── */
+  function bind(){
+    bodyEl.querySelectorAll('.rec').forEach(box => {
+      const id = box.dataset.id;
+
+      box.querySelector('[data-act="toggle"]').addEventListener('click', () => {
+        openId = (openId === id) ? null : id;
+        render();
+      });
+
+      box.querySelectorAll('[data-act="inc"],[data-act="dec"]').forEach(b => {
+        b.addEventListener('click', () => {
+          changeQty(id, b.dataset.item, b.dataset.act === 'inc' ? 1 : -1);
+        });
+      });
+
+      const sel = box.querySelector('[data-act="addItem"]');
+      if (sel) sel.addEventListener('change', () => {
+        if (sel.value) changeQty(id, sel.value, 1);
+      });
+
+      const dateIn = box.querySelector('[data-act="date"]');
+      if (dateIn) dateIn.addEventListener('change', () => {
+        if (!dateIn.value) return;
+        Store.update(id, { date: dateIn.value });
+        selected = dateIn.value;
+        toast('날짜를 옮겼습니다');
+        render();
+      });
+
+      const del = box.querySelector('[data-act="del"]');
+      if (del) del.addEventListener('click', () => {
+        if (!del.classList.contains('armed')){
+          del.classList.add('armed');
+          del.textContent = '한 번 더 누르면 삭제';
+          setTimeout(() => {
+            del.classList.remove('armed');
+            del.textContent = '삭제';
+          }, 2500);
+          return;
+        }
+        Store.remove(id);
+        openId = null;
+        toast('거래를 삭제했습니다');
+        render();
+      });
+    });
+  }
+
+  function changeQty(recId, itemId, d){
+    const rec = Store.all().find(r => r.id === recId);
+    if (!rec) return;
+    const lines = rec.lines.slice();
+    const i = lines.findIndex(l => l.id === itemId);
+    if (i < 0){
+      if (d > 0) lines.push({ id:itemId, qty:1, pr:CATALOG[itemId].pr });
+    } else {
+      lines[i] = Object.assign({}, lines[i], { qty: lines[i].qty + d });
+    }
+    const kept = lines.filter(l => l.qty > 0);
+    if (!kept.length){
+      toast('수량이 0이 되어 거래를 삭제했습니다');
+      Store.remove(recId);
+      openId = null;
+    } else {
+      Store.update(recId, { lines: kept });
+    }
+    render();
+  }
+
+  /* ── 엑셀 ───────────────────────────── */
+  document.getElementById('xlsx').addEventListener('click', () => {
+    const days = Store.byDate();
+    if (!days.length) return;
+
+    /* 1. 일자별 요약 */
+    const s1rows = [];
+    let gTotal = 0, gCount = 0, gSales = 0, gT1 = 0, gT2 = 0;
+    days.slice().reverse().forEach(d => {
+      const s = Store.summarize(d.records);
+      s1rows.push([d.date, Store.weekday(d.date), s.sales, s.count, s.perTeam.t1, s.perTeam.t2, s.total]);
+      gTotal += s.total; gCount += s.count; gSales += s.sales;
+      gT1 += s.perTeam.t1; gT2 += s.perTeam.t2;
+    });
+    s1rows.push(['합계', '', gSales, gCount, gT1, gT2, gTotal]);
+
+    /* 2. 상품별 판매 */
+    const s2rows = [];
+    days.slice().reverse().forEach(d => {
+      const s = Store.summarize(d.records);
+      s.items.forEach(it => {
+        s2rows.push([d.date, Store.weekday(d.date), TEAM_NAME[it.team], it.nm, it.pr, it.qty, it.amt]);
+      });
+    });
+
+    /* 3. 거래 내역 */
+    const s3rows = [];
+    days.slice().reverse().forEach(d => {
+      d.records.slice().sort((a,b) => a.ts - b.ts).forEach(r => {
+        const txt = r.lines.map(l => (CATALOG[l.id] ? CATALOG[l.id].nm : l.id) + ' ×' + l.qty).join(', ');
+        s3rows.push([r.date, Store.weekday(r.date), r.time, txt, Store.recCount(r), Store.recTotal(r)]);
+      });
+    });
+
+    const blob = buildXlsx([
+      { name:'일자별 요약', widths:[13,7,10,10,15,15,15],
+        header:['날짜','요일','판매 건수','판매 수량','글자취미 매출','한주한자 매출','합계 매출'],
+        rows:s1rows },
+      { name:'상품별 판매', widths:[13,7,12,26,11,9,13],
+        header:['날짜','요일','팀','상품','단가','수량','금액'],
+        rows:s2rows },
+      { name:'거래 내역', widths:[13,7,8,46,9,13],
+        header:['날짜','요일','시각','상품','수량','금액'],
+        rows:s3rows }
+    ]);
+
+    const now = new Date();
+    const p = n => String(n).padStart(2,'0');
+    const name = '페어_판매기록_' + now.getFullYear() + p(now.getMonth()+1) + p(now.getDate()) +
+                 '_' + p(now.getHours()) + p(now.getMinutes()) + '.xlsx';
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('엑셀 파일을 내려받았습니다');
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,86 +1,15 @@
+<!doctype html>
+<html lang="ko">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>글자취미 한주한자 부스 계산기</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Song+Myung&display=swap">
-
+<link rel="stylesheet" href="assets/base.css">
 <style>
-  :root{
-    --paper:#F1F2F5;
-    --surface:#FFFFFF;
-    --surface-2:#FAFAFC;
-    --ink:#15171C;
-    --ink-2:#5C626F;
-    --line:#DCDFE6;
-    --line-2:#C6CBD6;
-
-    --t1:#2B4C8C;          /* 글자취미 · 남 */
-    --t1-soft:#EAEFF9;
-    --t1-line:#B9C9E7;
-    --t2:#B03A2E;          /* 한주한자 · 주묵 */
-    --t2-soft:#FBEDEB;
-    --t2-line:#EDBFB8;
-
-    --on-accent:#FFFFFF;
-    --shadow:0 1px 0 rgba(21,23,28,.04), 0 2px 8px rgba(21,23,28,.06);
-
-    --r:14px;
-    --gap:clamp(5px, 1.1vh, 10px);
-  }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --paper:#101216;
-      --surface:#191C22;
-      --surface-2:#1F232A;
-      --ink:#ECEEF2;
-      --ink-2:#98A0B0;
-      --line:#2C313A;
-      --line-2:#3A404B;
-
-      --t1:#6E97DE;
-      --t1-soft:#1B2534;
-      --t1-line:#33456A;
-      --t2:#E1796B;
-      --t2-soft:#2A1B19;
-      --t2-line:#63332C;
-
-      --on-accent:#0F1115;
-      --shadow:0 1px 0 rgba(0,0,0,.3), 0 2px 10px rgba(0,0,0,.35);
-    }
-  }
-  :root[data-theme="dark"]{
-    --paper:#101216;
-    --surface:#191C22;
-    --surface-2:#1F232A;
-    --ink:#ECEEF2;
-    --ink-2:#98A0B0;
-    --line:#2C313A;
-    --line-2:#3A404B;
-
-    --t1:#6E97DE;
-    --t1-soft:#1B2534;
-    --t1-line:#33456A;
-    --t2:#E1796B;
-    --t2-soft:#2A1B19;
-    --t2-line:#63332C;
-
-    --on-accent:#0F1115;
-    --shadow:0 1px 0 rgba(0,0,0,.3), 0 2px 10px rgba(0,0,0,.35);
-  }
-
-  *{ box-sizing:border-box; }
-  body{
-    margin:0;
-    height:100dvh;
-    overflow:hidden;
-    background:var(--paper);
-    color:var(--ink);
-    font-family:"IBM Plex Sans KR", system-ui, -apple-system, "Malgun Gothic", sans-serif;
-    -webkit-tap-highlight-color:transparent;
-    -webkit-user-select:none; user-select:none;
-    word-break:keep-all;
-  }
+  body{ height:100dvh; overflow:hidden; -webkit-user-select:none; user-select:none; }
   .app{
     height:100dvh;
     display:flex; flex-direction:column;
@@ -92,22 +21,21 @@
   /* ── 헤더 ───────────────────────────── */
   header{
     flex:0 0 auto;
-    display:flex; align-items:baseline; gap:10px;
-    padding:0 2px 2px;
+    display:flex; align-items:center; gap:10px;
+    padding:0 2px;
   }
-  .brand{
-    font-family:"Song Myung", serif;
-    font-size:clamp(15px, 2.1vh, 19px);
-    letter-spacing:.01em;
-  }
-  .brand .x{ color:var(--ink-2); margin:0 .25em; font-size:.85em; }
-  .stamp{
+  .today{
     margin-left:auto;
-    font-size:clamp(10px,1.4vh,12px);
-    letter-spacing:.14em;
+    display:flex; align-items:center; gap:6px;
+    padding:4px 8px; margin-right:-4px;
+    border-radius:8px;
+    font-size:clamp(10px,1.45vh,12px);
     color:var(--ink-2);
-    text-transform:uppercase;
+    text-decoration:none;
   }
+  .today b{ color:var(--ink); font-weight:600; }
+  .today .arrow{ opacity:.5; }
+  .today:active{ background:var(--surface); }
 
   /* ── 버튼판 ─────────────────────────── */
   .board{
@@ -169,11 +97,7 @@
   .item:active{ transform:scale(.975); }
   .item:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
 
-  .item .nm{
-    font-size:clamp(12px, 1.85vh, 16px);
-    font-weight:500;
-    line-height:1.25;
-  }
+  .item .nm{ font-size:clamp(12px, 1.85vh, 16px); font-weight:500; line-height:1.25; }
   .item .pr{
     font-family:"IBM Plex Mono", monospace;
     font-variant-numeric:tabular-nums;
@@ -202,11 +126,7 @@
   }
 
   /* 담긴 상태 */
-  .item.on{
-    background:var(--accent);
-    border-color:var(--accent);
-    color:var(--on-accent);
-  }
+  .item.on{ background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
   .item.on .pr{ color:var(--on-accent); opacity:.75; }
   .item.on::after{ display:none; }
 
@@ -240,43 +160,26 @@
   /* ── 합계바 ─────────────────────────── */
   .total{
     flex:0 0 auto;
-    display:grid;
-    grid-template-columns:1fr auto;
-    grid-template-areas:"split acts" "sum sum";
-    align-items:end;
-    column-gap:10px; row-gap:clamp(4px,.8vh,8px);
-    padding:clamp(8px,1.5vh,14px) clamp(12px,3vw,18px);
+    display:flex; flex-direction:column;
+    gap:clamp(4px,.8vh,8px);
+    padding:clamp(8px,1.4vh,14px) clamp(12px,3vw,18px) clamp(9px,1.4vh,14px);
     border-radius:var(--r);
     background:var(--ink);
     color:var(--paper);
     box-shadow:var(--shadow);
     overflow:hidden;
   }
-  .total .split{
-    grid-area:split; align-self:center; overflow:hidden;
-    display:flex; flex-wrap:nowrap; gap:0 clamp(10px,3.2vw,18px);
-    white-space:nowrap;
+  .total-top{
+    display:flex; align-items:center; gap:10px;
+  }
+  .total-top .cnt{
     font-size:clamp(10px,1.5vh,13px);
-    min-width:0;
-    opacity:.6;
+    opacity:.6; min-width:0; overflow:hidden; white-space:nowrap;
   }
-  .sum{
-    grid-area:sum; min-width:0;
-    display:flex; align-items:baseline; gap:8px;
-  }
-  .sum .n{
-    font-family:"IBM Plex Mono", monospace;
-    font-variant-numeric:tabular-nums;
-    font-size:clamp(26px, min(6vh, 12vw), 52px);
-    font-weight:600;
-    line-height:1;
-    letter-spacing:-.02em;
-  }
-  .sum .won{ font-family:"Song Myung", serif; font-size:clamp(15px,2.4vh,20px); opacity:.7; }
-  .acts{ grid-area:acts; align-self:center; display:flex; gap:8px; }
+  .acts{ margin-left:auto; display:flex; gap:8px; }
   .acts button{
     min-width:clamp(52px,13.5vw,74px);
-    padding:clamp(9px,1.7vh,14px) 10px;
+    padding:clamp(8px,1.5vh,12px) 10px;
     border-radius:10px;
     border:1px solid rgba(255,255,255,.22);
     background:transparent;
@@ -285,12 +188,48 @@
     font-size:clamp(11px,1.6vh,13px); font-weight:500;
     cursor:pointer;
   }
-  :root[data-theme="dark"] .acts button,
-  :root:not([data-theme="light"]) .acts button{ }
   .acts button:active{ background:rgba(255,255,255,.14); }
   .acts button:disabled{ opacity:.3; cursor:default; }
   .acts button:focus-visible{ outline:2px solid var(--paper); outline-offset:2px; }
   #reset.armed{ background:var(--t2); border-color:var(--t2); color:#fff; }
+
+  .sum{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  .sum .n{
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(25px, min(5.4vh, 11vw), 46px);
+    font-weight:600; line-height:1; letter-spacing:-.02em;
+  }
+  .sum .won{ font-family:"Song Myung", serif; font-size:clamp(14px,2.2vh,20px); opacity:.7; }
+
+  .sale{
+    width:100%;
+    min-height:clamp(42px,6.2vh,56px);
+    border:0; border-radius:10px;
+    background:var(--paper); color:var(--ink);
+    font:inherit; font-size:clamp(14px,2.1vh,17px); font-weight:700;
+    letter-spacing:.02em;
+    cursor:pointer;
+    transition:transform .09s ease, opacity .12s ease;
+  }
+  .sale:active{ transform:scale(.99); }
+  .sale:disabled{ opacity:.25; cursor:default; }
+  .sale:focus-visible{ outline:3px solid var(--paper); outline-offset:2px; }
+
+  /* ── 저장 알림 ──────────────────────── */
+  .toast{
+    position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 22vh);
+    transform:translate(-50%, 8px);
+    padding:12px 20px;
+    border-radius:999px;
+    background:var(--ink); color:var(--paper);
+    font-size:14px; font-weight:600; white-space:nowrap;
+    box-shadow:0 6px 24px rgba(0,0,0,.28);
+    opacity:0; pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+    z-index:10;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
 
   /* 다크에서 합계바는 밝은 판으로 뒤집기 */
   @media (prefers-color-scheme: dark){
@@ -298,11 +237,16 @@
     :root:not([data-theme="light"]) .acts button{ border-color:rgba(21,23,28,.2); color:#15171C; }
     :root:not([data-theme="light"]) .acts button:active{ background:rgba(21,23,28,.08); }
     :root:not([data-theme="light"]) #reset.armed{ background:#B03A2E; border-color:#B03A2E; color:#fff; }
+    :root:not([data-theme="light"]) .sale{ background:#15171C; color:#EDEFF3; }
+    :root:not([data-theme="light"]) .sale:focus-visible{ outline-color:#15171C; }
+    :root:not([data-theme="light"]) .toast{ background:#EDEFF3; color:#15171C; }
   }
   :root[data-theme="dark"] .total{ background:#EDEFF3; color:#15171C; }
   :root[data-theme="dark"] .acts button{ border-color:rgba(21,23,28,.2); color:#15171C; }
   :root[data-theme="dark"] .acts button:active{ background:rgba(21,23,28,.08); }
   :root[data-theme="dark"] #reset.armed{ background:#B03A2E; border-color:#B03A2E; color:#fff; }
+  :root[data-theme="dark"] .sale{ background:#15171C; color:#EDEFF3; }
+  :root[data-theme="dark"] .toast{ background:#EDEFF3; color:#15171C; }
 
   /* 가로/태블릿: 팀을 좌우로 */
   @media (min-width:720px), (orientation:landscape) and (min-width:600px){
@@ -312,53 +256,40 @@
   @media (min-width:900px){
     .app{ max-width:1100px; margin:0 auto; }
   }
-
-  @media (prefers-reduced-motion:reduce){
-    *{ transition:none !important; }
-  }
 </style>
+</head>
+<body>
 
 <div class="app">
   <header>
-    <div class="brand">글자취미<span class="x">×</span>한주한자</div>
-    <div class="stamp">booth calc</div>
+    <span class="brand">글자취미<span class="x">×</span>한주한자</span>
+    <a class="today" href="records.html" id="today">
+      <span>오늘 <b id="todayAmt">0</b>원 · <b id="todayCnt">0</b>건</span>
+      <span class="arrow">›</span>
+    </a>
   </header>
 
   <main class="board" id="board"></main>
 
   <div class="total">
-    <div class="split"><span id="cnt">담긴 상품 없음</span></div>
-    <div class="sum">
-      <span class="n" id="sum">0</span><span class="won">원</span>
+    <div class="total-top">
+      <span class="cnt" id="cnt">담긴 상품 없음</span>
+      <div class="acts">
+        <button id="undo" type="button" disabled>되돌리기</button>
+        <button id="reset" type="button" disabled>초기화</button>
+      </div>
     </div>
-    <div class="acts">
-      <button id="undo" type="button" disabled>되돌리기</button>
-      <button id="reset" type="button" disabled>초기화</button>
-    </div>
+    <div class="sum"><span class="n" id="sum">0</span><span class="won">원</span></div>
+    <button class="sale" id="sale" type="button" disabled>판매 완료</button>
   </div>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/catalog.js"></script>
+<script src="assets/store.js"></script>
 <script>
 (function(){
-  const TEAMS = [
-    { key:'t1', name:'글자취미팀', items:[
-      { id:'g1', nm:'글자취미 1권',        pr:37000, main:true },
-      { id:'g2', nm:'글자취미 디지털 USB', pr:30000 },
-      { id:'g3', nm:'얼마나 오렌지',       pr:25000 },
-      { id:'g4', nm:'오렌지 엽서 3종세트', pr:3000  }
-    ]},
-    { key:'t2', name:'한주한자팀', items:[
-      { id:'h1', nm:'한주한자 아카이빙북', pr:30000, main:true },
-      { id:'h2', nm:'노트북 스티커',       pr:3000  },
-      { id:'h3', nm:'용어 정리집',         pr:15000 },
-      { id:'h4', nm:'로고 스티커',         pr:2000  },
-      { id:'h5', nm:'책갈피',              pr:6000  }
-    ]}
-  ];
-
-  const ALL = {};
-  TEAMS.forEach(t => t.items.forEach(i => ALL[i.id] = Object.assign({team:t.key}, i)));
-
   let cart = {};
   let history = [];
 
@@ -375,7 +306,6 @@
     try { localStorage.setItem(KEY, JSON.stringify({cart, history})); } catch(e){}
   }
 
-  const won = n => n.toLocaleString('ko-KR');
   const board = document.getElementById('board');
 
   TEAMS.forEach(t => {
@@ -431,6 +361,10 @@
   const cntEl   = document.getElementById('cnt');
   const undoBtn = document.getElementById('undo');
   const resetBtn= document.getElementById('reset');
+  const saleBtn = document.getElementById('sale');
+  const toastEl = document.getElementById('toast');
+
+  let currentTotal = 0;
 
   function render(){
     let total = 0, count = 0;
@@ -440,16 +374,17 @@
       const id = el.dataset.id, q = cart[id] || 0;
       el.classList.toggle('on', q > 0);
       el.querySelector('[data-qty]').textContent = q > 0 ? '×' + q : '';
-      el.setAttribute('aria-label', ALL[id].nm + ' ' + won(ALL[id].pr) + '원, ' + q + '개 담김');
+      el.setAttribute('aria-label', CATALOG[id].nm + ' ' + won(CATALOG[id].pr) + '원, ' + q + '개 담김');
     });
 
     Object.keys(cart).forEach(id => {
-      const it = ALL[id]; if (!it) return;
+      const it = CATALOG[id]; if (!it) return;
       const amt = it.pr * cart[id];
       total += amt; count += cart[id];
       per[it.team] += amt;
     });
 
+    currentTotal = total;
     sumEl.textContent = won(total);
     cntEl.textContent = count === 0 ? '담긴 상품 없음' : '담긴 상품 ' + count + '개';
 
@@ -460,8 +395,24 @@
 
     undoBtn.disabled = history.length === 0;
     resetBtn.disabled = count === 0;
+    saleBtn.disabled = count === 0;
+    saleBtn.textContent = count === 0 ? '판매 완료' : '판매 완료 · ' + won(total) + '원';
     if (count === 0) disarm();
     save();
+  }
+
+  function refreshToday(){
+    const s = Store.todaySummary();
+    document.getElementById('todayAmt').textContent = won(s.total);
+    document.getElementById('todayCnt').textContent = s.sales;
+  }
+
+  let toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1900);
   }
 
   undoBtn.addEventListener('click', () => {
@@ -471,6 +422,20 @@
     if (next <= 0) delete cart[last.id]; else cart[last.id] = next;
     buzz(8);
     render();
+  });
+
+  saleBtn.addEventListener('click', () => {
+    const lines = Object.keys(cart).map(id => ({ id, qty: cart[id] }));
+    if (!lines.length) return;
+    const amount = currentTotal;
+    const rec = Store.add(lines);
+    if (!rec){
+      toast('저장 실패 — 브라우저 저장공간을 확인해 주세요');
+      return;
+    }
+    cart = {}; history = [];
+    disarm(); buzz(24); render(); refreshToday();
+    toast('저장 완료 · ' + won(amount) + '원');
   });
 
   let armed = false, armTimer = null;
@@ -493,5 +458,10 @@
   });
 
   render();
+  refreshToday();
+  /* 기록 페이지에서 수정하고 돌아왔을 때 오늘 합계를 다시 읽습니다. */
+  window.addEventListener('pageshow', refreshToday);
 })();
 </script>
+</body>
+</html>

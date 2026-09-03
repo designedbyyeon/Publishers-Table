@@ -1,0 +1,497 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>글자취미 한주한자 부스 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Song+Myung&display=swap">
+
+<style>
+  :root{
+    --paper:#F1F2F5;
+    --surface:#FFFFFF;
+    --surface-2:#FAFAFC;
+    --ink:#15171C;
+    --ink-2:#5C626F;
+    --line:#DCDFE6;
+    --line-2:#C6CBD6;
+
+    --t1:#2B4C8C;          /* 글자취미 · 남 */
+    --t1-soft:#EAEFF9;
+    --t1-line:#B9C9E7;
+    --t2:#B03A2E;          /* 한주한자 · 주묵 */
+    --t2-soft:#FBEDEB;
+    --t2-line:#EDBFB8;
+
+    --on-accent:#FFFFFF;
+    --shadow:0 1px 0 rgba(21,23,28,.04), 0 2px 8px rgba(21,23,28,.06);
+
+    --r:14px;
+    --gap:clamp(5px, 1.1vh, 10px);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#101216;
+      --surface:#191C22;
+      --surface-2:#1F232A;
+      --ink:#ECEEF2;
+      --ink-2:#98A0B0;
+      --line:#2C313A;
+      --line-2:#3A404B;
+
+      --t1:#6E97DE;
+      --t1-soft:#1B2534;
+      --t1-line:#33456A;
+      --t2:#E1796B;
+      --t2-soft:#2A1B19;
+      --t2-line:#63332C;
+
+      --on-accent:#0F1115;
+      --shadow:0 1px 0 rgba(0,0,0,.3), 0 2px 10px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#101216;
+    --surface:#191C22;
+    --surface-2:#1F232A;
+    --ink:#ECEEF2;
+    --ink-2:#98A0B0;
+    --line:#2C313A;
+    --line-2:#3A404B;
+
+    --t1:#6E97DE;
+    --t1-soft:#1B2534;
+    --t1-line:#33456A;
+    --t2:#E1796B;
+    --t2-soft:#2A1B19;
+    --t2-line:#63332C;
+
+    --on-accent:#0F1115;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 2px 10px rgba(0,0,0,.35);
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    height:100dvh;
+    overflow:hidden;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR", system-ui, -apple-system, "Malgun Gothic", sans-serif;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none; user-select:none;
+    word-break:keep-all;
+  }
+  .app{
+    height:100dvh;
+    display:flex; flex-direction:column;
+    gap:var(--gap);
+    padding:var(--gap) clamp(8px,2.4vw,16px);
+    padding-bottom:max(var(--gap), env(safe-area-inset-bottom));
+  }
+
+  /* ── 헤더 ───────────────────────────── */
+  header{
+    flex:0 0 auto;
+    display:flex; align-items:baseline; gap:10px;
+    padding:0 2px 2px;
+  }
+  .brand{
+    font-family:"Song Myung", serif;
+    font-size:clamp(15px, 2.1vh, 19px);
+    letter-spacing:.01em;
+  }
+  .brand .x{ color:var(--ink-2); margin:0 .25em; font-size:.85em; }
+  .stamp{
+    margin-left:auto;
+    font-size:clamp(10px,1.4vh,12px);
+    letter-spacing:.14em;
+    color:var(--ink-2);
+    text-transform:uppercase;
+  }
+
+  /* ── 버튼판 ─────────────────────────── */
+  .board{
+    flex:1 1 auto; min-height:0;
+    display:flex; flex-direction:column; gap:var(--gap);
+  }
+  .team{
+    flex:1 1 0; min-height:0;
+    display:flex; flex-direction:column; gap:calc(var(--gap) * .8);
+  }
+  .team-bar{
+    flex:0 0 auto;
+    display:flex; align-items:center; gap:8px;
+    padding:0 2px;
+  }
+  .team-name{
+    font-size:clamp(11px,1.5vh,13px);
+    font-weight:600;
+    letter-spacing:.06em;
+    color:var(--accent);
+    display:flex; align-items:center; gap:6px;
+  }
+  .team-name::before{
+    content:""; width:9px; height:9px; border-radius:2px;
+    background:var(--accent);
+  }
+  .team-sub{
+    margin-left:auto;
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(11px,1.5vh,13px);
+    color:var(--ink-2);
+  }
+  .team-sub b{ color:var(--ink); font-weight:600; }
+
+  .grid{
+    flex:1 1 auto; min-height:0;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    grid-auto-rows:minmax(0,1fr);
+    gap:var(--gap);
+  }
+
+  /* ── 상품 타일 ──────────────────────── */
+  .item{
+    position:relative;
+    display:flex; flex-direction:column; justify-content:center; gap:2px;
+    padding:clamp(6px,1.2vh,12px) clamp(8px,2vw,14px);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow:var(--shadow);
+    font:inherit; text-align:left;
+    cursor:pointer;
+    transition:transform .09s ease, background-color .12s ease, border-color .12s ease;
+    overflow:hidden;
+  }
+  .item:active{ transform:scale(.975); }
+  .item:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+
+  .item .nm{
+    font-size:clamp(12px, 1.85vh, 16px);
+    font-weight:500;
+    line-height:1.25;
+  }
+  .item .pr{
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(11px, 1.6vh, 14px);
+    font-weight:500;
+    color:var(--ink-2);
+  }
+
+  /* 마지막 줄에 빈칸이 남으면 채우기 */
+  .grid .item:last-child:nth-child(even){ grid-column:span 2; }
+
+  /* 메인 상품 */
+  .item.main{
+    grid-column:span 2;
+    background:var(--soft);
+    border-color:var(--line-accent);
+  }
+  .item.main .nm{ font-size:clamp(15px, 2.5vh, 21px); font-weight:700; }
+  .item.main .pr{ font-size:clamp(12px, 1.8vh, 15px); color:var(--accent); }
+  .item.main::after{
+    content:"MAIN";
+    position:absolute; top:8px; right:10px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:9px; letter-spacing:.16em;
+    color:var(--accent); opacity:.55;
+  }
+
+  /* 담긴 상태 */
+  .item.on{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:var(--on-accent);
+  }
+  .item.on .pr{ color:var(--on-accent); opacity:.75; }
+  .item.on::after{ display:none; }
+
+  .qty{
+    position:absolute; top:0; right:0;
+    min-width:clamp(26px,4.4vh,34px);
+    height:clamp(22px,3.4vh,28px);
+    padding:0 8px;
+    display:none; align-items:center; justify-content:center;
+    border-bottom-left-radius:12px;
+    background:var(--on-accent); color:var(--accent);
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(12px,1.9vh,15px); font-weight:600;
+  }
+  .item.on .qty{ display:flex; }
+
+  .minus{
+    position:absolute; bottom:0; right:0;
+    width:clamp(34px,5.4vh,44px); height:clamp(30px,4.6vh,38px);
+    display:none; align-items:center; justify-content:center;
+    border:0; border-top-left-radius:12px;
+    background:rgba(255,255,255,.16); color:var(--on-accent);
+    font-size:clamp(15px,2.2vh,19px); line-height:1;
+    cursor:pointer;
+  }
+  .item.on .minus{ display:flex; }
+  .minus:active{ background:rgba(255,255,255,.3); }
+  .minus:focus-visible{ outline:2px solid var(--on-accent); outline-offset:-4px; }
+
+  /* ── 합계바 ─────────────────────────── */
+  .total{
+    flex:0 0 auto;
+    display:grid;
+    grid-template-columns:1fr auto;
+    grid-template-areas:"split acts" "sum sum";
+    align-items:end;
+    column-gap:10px; row-gap:clamp(4px,.8vh,8px);
+    padding:clamp(8px,1.5vh,14px) clamp(12px,3vw,18px);
+    border-radius:var(--r);
+    background:var(--ink);
+    color:var(--paper);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .total .split{
+    grid-area:split; align-self:center; overflow:hidden;
+    display:flex; flex-wrap:nowrap; gap:0 clamp(10px,3.2vw,18px);
+    white-space:nowrap;
+    font-size:clamp(10px,1.5vh,13px);
+    min-width:0;
+    opacity:.6;
+  }
+  .sum{
+    grid-area:sum; min-width:0;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .sum .n{
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(26px, min(6vh, 12vw), 52px);
+    font-weight:600;
+    line-height:1;
+    letter-spacing:-.02em;
+  }
+  .sum .won{ font-family:"Song Myung", serif; font-size:clamp(15px,2.4vh,20px); opacity:.7; }
+  .acts{ grid-area:acts; align-self:center; display:flex; gap:8px; }
+  .acts button{
+    min-width:clamp(52px,13.5vw,74px);
+    padding:clamp(9px,1.7vh,14px) 10px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,.22);
+    background:transparent;
+    color:var(--paper);
+    font:inherit;
+    font-size:clamp(11px,1.6vh,13px); font-weight:500;
+    cursor:pointer;
+  }
+  :root[data-theme="dark"] .acts button,
+  :root:not([data-theme="light"]) .acts button{ }
+  .acts button:active{ background:rgba(255,255,255,.14); }
+  .acts button:disabled{ opacity:.3; cursor:default; }
+  .acts button:focus-visible{ outline:2px solid var(--paper); outline-offset:2px; }
+  #reset.armed{ background:var(--t2); border-color:var(--t2); color:#fff; }
+
+  /* 다크에서 합계바는 밝은 판으로 뒤집기 */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]) .total{ background:#EDEFF3; color:#15171C; }
+    :root:not([data-theme="light"]) .acts button{ border-color:rgba(21,23,28,.2); color:#15171C; }
+    :root:not([data-theme="light"]) .acts button:active{ background:rgba(21,23,28,.08); }
+    :root:not([data-theme="light"]) #reset.armed{ background:#B03A2E; border-color:#B03A2E; color:#fff; }
+  }
+  :root[data-theme="dark"] .total{ background:#EDEFF3; color:#15171C; }
+  :root[data-theme="dark"] .acts button{ border-color:rgba(21,23,28,.2); color:#15171C; }
+  :root[data-theme="dark"] .acts button:active{ background:rgba(21,23,28,.08); }
+  :root[data-theme="dark"] #reset.armed{ background:#B03A2E; border-color:#B03A2E; color:#fff; }
+
+  /* 가로/태블릿: 팀을 좌우로 */
+  @media (min-width:720px), (orientation:landscape) and (min-width:600px){
+    .board{ flex-direction:row; }
+    .team{ flex:1 1 50%; }
+  }
+  @media (min-width:900px){
+    .app{ max-width:1100px; margin:0 auto; }
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{ transition:none !important; }
+  }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">글자취미<span class="x">×</span>한주한자</div>
+    <div class="stamp">booth calc</div>
+  </header>
+
+  <main class="board" id="board"></main>
+
+  <div class="total">
+    <div class="split"><span id="cnt">담긴 상품 없음</span></div>
+    <div class="sum">
+      <span class="n" id="sum">0</span><span class="won">원</span>
+    </div>
+    <div class="acts">
+      <button id="undo" type="button" disabled>되돌리기</button>
+      <button id="reset" type="button" disabled>초기화</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TEAMS = [
+    { key:'t1', name:'글자취미팀', items:[
+      { id:'g1', nm:'글자취미 1권',        pr:37000, main:true },
+      { id:'g2', nm:'글자취미 디지털 USB', pr:30000 },
+      { id:'g3', nm:'얼마나 오렌지',       pr:25000 },
+      { id:'g4', nm:'오렌지 엽서 3종세트', pr:3000  }
+    ]},
+    { key:'t2', name:'한주한자팀', items:[
+      { id:'h1', nm:'한주한자 아카이빙북', pr:30000, main:true },
+      { id:'h2', nm:'노트북 스티커',       pr:3000  },
+      { id:'h3', nm:'용어 정리집',         pr:15000 },
+      { id:'h4', nm:'로고 스티커',         pr:2000  },
+      { id:'h5', nm:'책갈피',              pr:6000  }
+    ]}
+  ];
+
+  const ALL = {};
+  TEAMS.forEach(t => t.items.forEach(i => ALL[i.id] = Object.assign({team:t.key}, i)));
+
+  let cart = {};
+  let history = [];
+
+  const KEY = 'booth-calc-v1';
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s && s.cart) { cart = s.cart; history = s.history || []; }
+    }
+  } catch(e){}
+
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify({cart, history})); } catch(e){}
+  }
+
+  const won = n => n.toLocaleString('ko-KR');
+  const board = document.getElementById('board');
+
+  TEAMS.forEach(t => {
+    const sec = document.createElement('section');
+    sec.className = 'team';
+    sec.style.setProperty('--accent', 'var(--' + t.key + ')');
+    sec.style.setProperty('--soft', 'var(--' + t.key + '-soft)');
+    sec.style.setProperty('--line-accent', 'var(--' + t.key + '-line)');
+    sec.innerHTML =
+      '<div class="team-bar">' +
+        '<span class="team-name">' + t.name + '</span>' +
+        '<span class="team-sub" id="sub-' + t.key + '">0<span style="opacity:.6">원</span></span>' +
+      '</div><div class="grid"></div>';
+    const grid = sec.querySelector('.grid');
+
+    t.items.forEach(it => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item' + (it.main ? ' main' : '');
+      b.dataset.id = it.id;
+      b.innerHTML =
+        '<span class="qty" data-qty></span>' +
+        '<span class="nm">' + it.nm + '</span>' +
+        '<span class="pr">' + won(it.pr) + '원</span>' +
+        '<span class="minus" role="button" tabindex="0" aria-label="' + it.nm + ' 하나 빼기">&minus;</span>';
+      b.addEventListener('click', e => {
+        if (e.target.closest('.minus')) return;
+        add(it.id, 1);
+      });
+      const m = b.querySelector('.minus');
+      m.addEventListener('click', e => { e.stopPropagation(); add(it.id, -1); });
+      m.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); add(it.id, -1); }
+      });
+      grid.appendChild(b);
+    });
+    board.appendChild(sec);
+  });
+
+  function buzz(ms){ try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
+
+  function add(id, d){
+    const next = (cart[id] || 0) + d;
+    if (next < 0) return;
+    if (next === 0) delete cart[id]; else cart[id] = next;
+    history.push({ id, d });
+    if (history.length > 200) history.shift();
+    buzz(d > 0 ? 12 : 8);
+    render();
+  }
+
+  const sumEl   = document.getElementById('sum');
+  const cntEl   = document.getElementById('cnt');
+  const undoBtn = document.getElementById('undo');
+  const resetBtn= document.getElementById('reset');
+
+  function render(){
+    let total = 0, count = 0;
+    const per = { t1:0, t2:0 };
+
+    document.querySelectorAll('.item').forEach(el => {
+      const id = el.dataset.id, q = cart[id] || 0;
+      el.classList.toggle('on', q > 0);
+      el.querySelector('[data-qty]').textContent = q > 0 ? '×' + q : '';
+      el.setAttribute('aria-label', ALL[id].nm + ' ' + won(ALL[id].pr) + '원, ' + q + '개 담김');
+    });
+
+    Object.keys(cart).forEach(id => {
+      const it = ALL[id]; if (!it) return;
+      const amt = it.pr * cart[id];
+      total += amt; count += cart[id];
+      per[it.team] += amt;
+    });
+
+    sumEl.textContent = won(total);
+    cntEl.textContent = count === 0 ? '담긴 상품 없음' : '담긴 상품 ' + count + '개';
+
+    TEAMS.forEach(t => {
+      document.getElementById('sub-' + t.key).innerHTML =
+        '<b>' + won(per[t.key]) + '</b><span style="opacity:.6">원</span>';
+    });
+
+    undoBtn.disabled = history.length === 0;
+    resetBtn.disabled = count === 0;
+    if (count === 0) disarm();
+    save();
+  }
+
+  undoBtn.addEventListener('click', () => {
+    const last = history.pop();
+    if (!last) return;
+    const next = (cart[last.id] || 0) - last.d;
+    if (next <= 0) delete cart[last.id]; else cart[last.id] = next;
+    buzz(8);
+    render();
+  });
+
+  let armed = false, armTimer = null;
+  function disarm(){
+    armed = false;
+    clearTimeout(armTimer);
+    resetBtn.classList.remove('armed');
+    resetBtn.textContent = '초기화';
+  }
+  resetBtn.addEventListener('click', () => {
+    if (!armed){
+      armed = true;
+      resetBtn.classList.add('armed');
+      resetBtn.textContent = '한 번 더';
+      armTimer = setTimeout(disarm, 2500);
+      return;
+    }
+    cart = {}; history = [];
+    disarm(); buzz(20); render();
+  });
+
+  render();
+})();
+</script>

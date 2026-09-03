@@ -485,6 +485,7 @@
   render();
   refreshToday();
   Sync.onChange(paintSync);
+  if (Sync.applyLink()) toast('구글 시트에 연결됐습니다');
   Sync.start();
   /* 기록 페이지에서 수정하고 돌아왔을 때 오늘 합계를 다시 읽습니다. */
   window.addEventListener('pageshow', refreshToday);

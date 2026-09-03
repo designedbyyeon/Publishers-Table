@@ -61,6 +61,35 @@ window.Sync = (function(){
       });
   }
 
+  /* 초대 링크(#setup=...)로 열면 주소를 물어보지 않고 바로 연결합니다. */
+  function applyLink(){
+    const h = (location.hash || '').replace(/^#/, '');
+    if (h.indexOf('setup=') < 0) return false;
+    let url = '', secret = '';
+    try {
+      const q = new URLSearchParams(h);
+      url = (q.get('setup') || '').trim();
+      secret = (q.get('k') || '').trim();
+    } catch(e){ return false; }
+    if (!url || url.indexOf('/exec') < 0) return false;
+
+    setConfig({ url, secret, enabled:true });
+    /* 주소가 화면에 계속 남지 않도록 해시를 지웁니다. */
+    try { history.replaceState(null, '', location.pathname + location.search); }
+    catch(e){ location.hash = ''; }
+    return true;
+  }
+
+  /* 팀원에게 보낼 초대 링크 */
+  function inviteLink(page){
+    const c = config();
+    if (!c.url) return '';
+    const base = location.origin + location.pathname.replace(/[^/]*$/, '') + (page || 'index.html');
+    let q = 'setup=' + encodeURIComponent(c.url);
+    if (c.secret) q += '&k=' + encodeURIComponent(c.secret);
+    return base + '#' + q;
+  }
+
   let inFlight = null;
 
   function flush(){
@@ -108,7 +137,9 @@ window.Sync = (function(){
 
   /* 자동 전송: 화면을 열 때, 네트워크가 돌아올 때, 그리고 주기적으로 */
   function start(){
+    const linked = applyLink();
     if (!config().enabled) return;
+    if (linked) emit();
     flush();
     window.addEventListener('online', flush);
     document.addEventListener('visibilitychange', () => {
@@ -117,5 +148,5 @@ window.Sync = (function(){
     setInterval(() => { if (navigator.onLine !== false) flush(); }, 45000);
   }
 
-  return { config, setConfig, test, flush, start, onChange, status };
+  return { config, setConfig, test, flush, start, onChange, status, applyLink, inviteLink };
 })();

@@ -305,7 +305,7 @@
   .sync-btns button:disabled{ opacity:.35; cursor:default; }
   .sync-msg{
     margin-top:11px; font-size:12.5px; line-height:1.6;
-    color:var(--ink-2); word-break:break-all;
+    color:var(--ink-2); word-break:break-all; white-space:pre-wrap;
   }
   .sync-msg.ok{ color:#2E9E5B; }
   .sync-msg.err{ color:var(--t2); }
@@ -385,6 +385,7 @@
       <div class="sync-btns">
         <button type="button" class="primary" id="syncSave">저장하고 연결</button>
         <button type="button" id="syncNow">지금 전송</button>
+        <button type="button" id="syncInvite">팀원 초대 링크</button>
         <button type="button" id="syncOff">연동 끄기</button>
       </div>
       <div class="sync-msg" id="syncMsg"></div>
@@ -399,6 +400,7 @@
           <li><b>실행 사용자: 나</b>, <b>액세스 권한: 모든 사용자</b> 로 두고 배포합니다.</li>
           <li>권한 승인 창이 뜨면 본인 계정을 고르고 <b>고급 → 이동</b> 을 눌러 허용합니다.</li>
           <li>나온 <b>/exec 로 끝나는 주소</b>를 위 칸에 붙여넣고 <b>저장하고 연결</b>을 누릅니다.</li>
+          <li>팀원 폰에도 연결하려면 <b>팀원 초대 링크</b>를 눌러 나온 링크를 보내주세요. 그 링크로 열면 주소를 입력할 필요 없이 바로 연결됩니다. (이 과정은 폰마다 한 번씩)</li>
         </ol>
         <div class="warn">‘모든 사용자’는 주소를 아는 사람이면 시트에 기록을 보낼 수 있다는 뜻입니다. 주소를 팀원끼리만 공유하시고, 더 막고 싶으면 스크립트의 <b>SECRET</b> 에 값을 넣고 위 <b>비밀 키</b>에 같은 값을 적으세요.</div>
       </details>
@@ -755,6 +757,16 @@
         else if (r.sent) msg(r.sent + '건을 보냈습니다.', 'ok');
         else msg('보낼 기록이 없습니다. 모두 반영돼 있습니다.', 'ok');
       });
+    });
+
+    document.getElementById('syncInvite').addEventListener('click', () => {
+      const link = Sync.inviteLink();
+      if (!link){ msg('먼저 저장하고 연결해 주세요.', 'err'); return; }
+      const gap = String.fromCharCode(10, 10);
+      const show = () => msg('팀원에게 이 링크를 보내세요. 열기만 하면 시트에 바로 연결됩니다.' + gap + link, 'ok');
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(link).then(() => { toast('초대 링크를 복사했습니다'); show(); }).catch(show);
+      } else show();
     });
 
     document.getElementById('syncOff').addEventListener('click', () => {
